@@ -1,0 +1,611 @@
+<!-- ========================================================= -->
+<!-- PART 1：HTMLヘッダ ＋ 淡い青基調CSS（復元版） -->
+<!-- ========================================================= -->
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>勤怠入力システム（GitHub保存版）</title>
+
+<style>
+/* ===== 全体 ===== */
+body {
+    font-family: "Segoe UI", sans-serif;
+    background: #eef5ff;          /* 画像の淡い青背景 */
+    margin: 0;
+    padding: 20px;
+}
+
+/* ===== タイトル ===== */
+h1 {
+    color: #2a5bd7;               /* 画像の青 */
+    margin-bottom: 20px;
+}
+
+/* ===== 入力行 ===== */
+.row {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+label {
+    width: 140px;                 /* 画像の幅に合わせる */
+    font-weight: bold;
+    color: #2a5bd7;
+}
+
+input, select {
+    padding: 6px 10px;
+    border: 1px solid #2a5bd7;    /* 青枠 */
+    border-radius: 4px;
+    background: #ffffff;          /* 白背景 */
+}
+
+/* ===== ボタン ===== */
+button {
+    background: #2a5bd7;          /* 画像の青 */
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-right: 10px;
+}
+
+button:hover {
+    background: #1f49b0;
+}
+
+/* ===== モード切替タブ（入力／参照／管理者） ===== */
+.tabs {
+    display: flex;
+    margin-top: 10px;
+}
+
+.tab {
+    padding: 8px 14px;
+    border: 1px solid #2a5bd7;    /* 青枠 */
+    cursor: pointer;
+    background: #ffffff;          /* 白背景（画像通り） */
+    border-radius: 4px 4px 0 0;
+    margin-right: 4px;
+    color: #2a5bd7;               /* 青文字 */
+}
+
+.tab.active {
+    background: #2a5bd7;          /* 選択時は青 */
+    color: white;
+}
+
+/* ===== テーブル ===== */
+table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 10px;
+    background: white;
+}
+
+th {
+    background: #2a5bd7;          /* 青ヘッダ */
+    color: white;
+    padding: 8px;
+    border: 1px solid #2a5bd7;
+}
+
+td {
+    padding: 8px;
+    border: 1px solid #2a5bd7;    /* 青枠 */
+}
+
+/* ===== 管理者画面 ===== */
+#adminTableArea {
+    margin-top: 20px;
+}
+
+</style>
+</head>
+<!-- ========================================================= -->
+<!-- PART 2：入力画面（処理月対応） -->
+<!-- ========================================================= -->
+
+<body>
+
+<!-- モード切替タブ（入力／参照／管理者） -->
+<div class="tabs">
+    <div id="tab-mode-input" class="tab active" onclick="switchMode('input')">入力モード</div>
+    <div id="tab-mode-ref" class="tab" onclick="switchMode('reference')">参照モード</div>
+    <div id="tab-mode-admin" class="tab" onclick="switchMode('admin')">管理者モード</div>
+</div>
+
+<h1>勤怠入力システム（GitHub保存版）</h1>
+
+<!-- 入力画面 -->
+<div id="input-screen">
+
+    <h2>入力画面</h2>
+
+    <!-- 処理月 -->
+    <div class="row">
+        <label>処理月 (YYYY-MM)</label>
+        <input id="procMonth" type="month">
+    </div>
+
+    <!-- チーム -->
+    <div class="row">
+        <label>チーム</label>
+        <select id="team">
+            <option value="T1">T1</option>
+            <option value="T2">T2</option>
+            <option value="T3">T3</option>
+            <option value="T4">T4</option>
+            <option value="企画推進">企画推進</option>
+        </select>
+    </div>
+
+    <!-- 氏名 -->
+    <div class="row">
+        <label>氏名</label>
+        <input id="name" type="text">
+    </div>
+
+    <!-- パスワード（一般ユーザー用） -->
+    <div class="row">
+        <label>パスワード</label>
+        <input id="password" type="password">
+    </div>
+
+    <hr>
+
+    <!-- 入力方法タブ（個別／範囲） -->
+    <div class="tabs">
+        <div id="tab-single" class="tab active" onclick="switchTab('single')">個別入力</div>
+        <div id="tab-range" class="tab" onclick="switchTab('range')">範囲入力</div>
+    </div>
+
+    <!-- 個別入力 -->
+    <div id="content-single" class="tab-content">
+        <div class="row">
+            <label>日付</label>
+            <input id="addDate" type="date">
+        </div>
+
+        <div class="row">
+            <label>区分</label>
+            <select id="kubun">
+                <option value="行先変更">行先変更</option>
+                <option value="出張">出張</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label>適用内容</label>
+            <input id="tekiyo" type="text">
+        </div>
+
+        <button onclick="addRecord()">追加</button>
+    </div>
+
+    <!-- 範囲入力 -->
+    <div id="content-range" class="tab-content" style="display:none;">
+        <div class="row">
+            <label>開始日</label>
+            <input id="rangeStart" type="date">
+        </div>
+
+        <div class="row">
+            <label>終了日</label>
+            <input id="rangeEnd" type="date">
+        </div>
+
+        <div class="row">
+            <label>区分</label>
+            <select id="rangeKubun">
+                <option value="行先変更">行先変更</option>
+                <option value="出張">出張</option>
+            </select>
+        </div>
+
+        <div class="row">
+            <label>適用内容</label>
+            <input id="rangeTekiyo" type="text">
+        </div>
+
+        <button onclick="addRangeRecord()">範囲追加</button>
+    </div>
+
+    <hr>
+
+    <!-- 入力一覧テーブル -->
+    <table id="inputTable">
+        <thead>
+            <tr>
+                <th>日付</th>
+                <th>区分</th>
+                <th>適用</th>
+                <th>削除</th>
+            </tr>
+        </thead>
+        <tbody id="inputTableBody"></tbody>
+    </table>
+
+    <button onclick="saveData()">保存 (GitHub)</button>
+    <button onclick="switchMode('reference')">参照へ移動</button>
+
+</div>
+<!-- ========================================================= -->
+<!-- PART 3：参照画面（閲覧モード） -->
+<!-- ========================================================= -->
+
+<!-- 参照画面 -->
+<div id="reference-screen" style="display:none;">
+
+    <h2>参照画面</h2>
+
+    <!-- 処理月 -->
+    <div class="row">
+        <label>処理月</label>
+        <input id="refMonth" type="month">
+    </div>
+
+    <!-- チーム -->
+    <div class="row">
+        <label>チーム</label>
+        <select id="refTeam">
+            <option value="T1">T1</option>
+            <option value="T2">T2</option>
+            <option value="T3">T3</option>
+            <option value="T4">T4</option>
+            <option value="企画推進">企画推進</option>
+        </select>
+    </div>
+
+    <!-- 氏名 -->
+    <div class="row">
+        <label>氏名</label>
+        <input id="refName" type="text">
+    </div>
+
+    <!-- パスワード（一般ユーザー用） -->
+    <div class="row">
+        <label>パスワード</label>
+        <input id="refPassword" type="password">
+    </div>
+
+    <button onclick="loadData()">参照実行</button>
+
+    <hr>
+
+    <!-- 参照結果テーブル -->
+    <table id="referenceTable">
+        <thead>
+            <tr>
+                <th>日付</th>
+                <th>区分</th>
+                <th>適用</th>
+            </tr>
+        </thead>
+        <tbody id="referenceTableBody"></tbody>
+    </table>
+
+</div>
+<!-- ========================================================= -->
+<!-- PART 4：管理者画面（一覧生成） -->
+<!-- ========================================================= -->
+
+<!-- 管理者画面 -->
+<div id="admin-screen" style="display:none;">
+
+    <h2>管理者ビュー</h2>
+
+    <!-- 処理月 -->
+    <div class="row">
+        <label>処理月</label>
+        <input id="adminMonth" type="month">
+    </div>
+
+    <!-- チーム選択 -->
+    <div class="row">
+        <label>チーム選択</label>
+        <select id="adminTeam">
+            <option value="T1">T1</option>
+            <option value="T2">T2</option>
+            <option value="T3">T3</option>
+            <option value="T4">T4</option>
+            <option value="企画推進">企画推進</option>
+        </select>
+    </div>
+
+    <!-- 管理者一覧生成ボタン -->
+    <button onclick="loadAdmin()">一覧生成 (GitHub)</button>
+
+    <hr>
+
+    <!-- 管理者一覧テーブル表示領域 -->
+    <div id="adminTableArea"></div>
+
+</div>
+<!-- ========================================================= -->
+<!-- PART 5：JavaScript（淡い青CSS対応・パスワード2種対応） -->
+<!-- ========================================================= -->
+
+<script>
+/* -----------------------------------------------
+★ Worker の URL（あなたの環境に合わせて変更）
+----------------------------------------------- */
+const WORKER_URL = "https://patient-violet-af9d.k-exe-kita.workers.dev";
+
+/* -----------------------------------------------
+★ 入力画面の一時保存用配列
+----------------------------------------------- */
+let tempRecords = [];
+
+/* -----------------------------------------------
+★ モード切替（入力／参照／管理者）
+----------------------------------------------- */
+function switchMode(mode) {
+
+    // タブの見た目リセット
+    document.getElementById('tab-mode-input').classList.remove('active');
+    document.getElementById('tab-mode-ref').classList.remove('active');
+    document.getElementById('tab-mode-admin').classList.remove('active');
+
+    // 管理者モードはパスワードチェック
+    if (mode === 'admin') {
+        const pw = prompt("管理者パスワードを入力してください");
+        if (pw !== "alladmin") {
+            alert("管理者パスワードが違います");
+            return;
+        }
+    }
+
+    // タブの見た目
+    if (mode === 'input') {
+        document.getElementById('tab-mode-input').classList.add('active');
+    } else if (mode === 'reference') {
+        document.getElementById('tab-mode-ref').classList.add('active');
+    } else {
+        document.getElementById('tab-mode-admin').classList.add('active');
+    }
+
+    // 画面切替
+    document.getElementById('input-screen').style.display = (mode === 'input') ? 'block' : 'none';
+    document.getElementById('reference-screen').style.display = (mode === 'reference') ? 'block' : 'none';
+    document.getElementById('admin-screen').style.display = (mode === 'admin') ? 'block' : 'none';
+}
+
+/* -----------------------------------------------
+★ 入力タブ切替（個別／範囲）
+----------------------------------------------- */
+function switchTab(mode) {
+    document.getElementById('tab-single').classList.remove('active');
+    document.getElementById('tab-range').classList.remove('active');
+    document.getElementById('content-single').style.display = 'none';
+    document.getElementById('content-range').style.display = 'none';
+
+    if (mode === 'single') {
+        document.getElementById('tab-single').classList.add('active');
+        document.getElementById('content-single').style.display = 'block';
+    } else {
+        document.getElementById('tab-range').classList.add('active');
+        document.getElementById('content-range').style.display = 'block';
+    }
+}
+
+/* -----------------------------------------------
+★ 個別追加
+----------------------------------------------- */
+function addRecord() {
+    const date = document.getElementById('addDate').value;
+    const kubun = document.getElementById('kubun').value;
+    const tekiyo = document.getElementById('tekiyo').value;
+
+    if (!date) {
+        alert("日付を入力してください");
+        return;
+    }
+
+    tempRecords.push({ date, kubun, tekiyo });
+    renderTable();
+}
+
+/* -----------------------------------------------
+★ 範囲追加
+----------------------------------------------- */
+function addRangeRecord() {
+    const start = document.getElementById('rangeStart').value;
+    const end = document.getElementById('rangeEnd').value;
+    const kubun = document.getElementById('rangeKubun').value;
+    const tekiyo = document.getElementById('rangeTekiyo').value;
+
+    if (!start || !end) {
+        alert("開始日と終了日を入力してください");
+        return;
+    }
+
+    const s = new Date(start);
+    const e = new Date(end);
+
+    for (let d = s; d <= e; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toISOString().split("T")[0];
+        tempRecords.push({ date: dateStr, kubun, tekiyo });
+    }
+
+    renderTable();
+}
+
+/* -----------------------------------------------
+★ 入力一覧テーブル描画
+----------------------------------------------- */
+function renderTable() {
+    const tbody = document.getElementById('inputTableBody');
+    tbody.innerHTML = "";
+
+    tempRecords.sort((a, b) => a.date.localeCompare(b.date));
+
+    tempRecords.forEach((rec, index) => {
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+            <td>${rec.date}</td>
+            <td>${rec.kubun}</td>
+            <td>${rec.tekiyo}</td>
+            <td><button onclick="deleteRecord(${index})">削除</button></td>
+        `;
+
+        tbody.appendChild(tr);
+    });
+}
+
+/* -----------------------------------------------
+★ 削除
+----------------------------------------------- */
+function deleteRecord(index) {
+    tempRecords.splice(index, 1);
+    renderTable();
+}
+
+/* -----------------------------------------------
+★ 保存（一般ユーザー）
+----------------------------------------------- */
+async function saveData() {
+    const month = document.getElementById('procMonth').value;
+    const team = document.getElementById('team').value;
+    const name = document.getElementById('name').value;
+    const password = document.getElementById('password').value;
+
+    if (!month || !team || !name || !password) {
+        alert("処理月・チーム・氏名・パスワードを入力してください");
+        return;
+    }
+
+    const payload = {
+        mode: "save",
+        project:"kintai",
+        month,
+        team,
+        name,
+        password,
+        passwordType: "user",   // ← 一般ユーザー
+        records: tempRecords,
+        date: new Date().toISOString().slice(0, 10)   // ← ★ここを追加
+    };
+    const res = await fetch(WORKER_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    alert("保存完了: " + text);
+}
+
+/* -----------------------------------------------
+★ 参照（一般ユーザー）
+----------------------------------------------- */
+async function loadData() {
+    const month = document.getElementById('refMonth').value;
+    const team = document.getElementById('refTeam').value;
+    const name = document.getElementById('refName').value;
+    const password = document.getElementById('refPassword').value;
+
+    const payload = {
+        mode: "load",
+        project:"kintai",
+        month,
+        team,
+        name,
+        password,
+        passwordType: "user",
+        date: new Date().toISOString().slice(0, 10)   // ← ★ここを追加
+    };
+
+    const res = await fetch(WORKER_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+
+    const tbody = document.getElementById('referenceTableBody');
+    tbody.innerHTML = "";
+
+    data.records.forEach(rec => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${rec.date}</td>
+            <td>${rec.kubun}</td>
+            <td>${rec.tekiyo}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+/* -----------------------------------------------
+★ 管理者一覧生成（管理者）
+----------------------------------------------- */
+async function loadAdmin() {
+    const month = document.getElementById('adminMonth').value;
+    const team = document.getElementById('adminTeam').value;
+
+    const payload = {
+        mode: "admin",
+        project:"kintai",
+        month,
+        team,
+        passwordType: "admin",
+        date: new Date().toISOString().slice(0, 10)   // ← ★ここを追加
+    };
+
+    const res = await fetch(WORKER_URL, {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+
+    const all = await res.json();
+
+    renderAdminTable(all);
+}
+
+/* -----------------------------------------------
+★ 管理者テーブル描画
+----------------------------------------------- */
+function renderAdminTable(all) {
+    let html = `<table><thead><tr><th>氏名 PW</th>`;
+
+    // 日付一覧を抽出
+    const dates = new Set();
+    all.forEach(u => u.records.forEach(r => dates.add(r.date)));
+    const sortedDates = [...dates].sort();
+
+    sortedDates.forEach(d => {
+        html += `<th>${d}</th>`;
+    });
+    html += `</tr></thead><tbody>`;
+
+    // 行生成
+    all.forEach(user => {
+        const rowKey = `${user.name} ${user.password}`;
+        html += `<tr><td>${rowKey}</td>`;
+
+        sortedDates.forEach(d => {
+            const rec = user.records.find(r => r.date === d);
+            if (rec) {
+                const text = `${rec.kubun} ${rec.tekiyo}`;
+                html += `<td title="${text}">${text}</td>`;
+            } else {
+                html += `<td></td>`;
+            }
+        });
+
+        html += `</tr>`;
+    });
+
+    html += `</tbody></table>`;
+
+    document.getElementById('adminTableArea').innerHTML = html;
+}
+</script>
+
+</body>
+</html>
