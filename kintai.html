@@ -467,7 +467,7 @@ function deleteRecord(index) {
 }
 
 /* -----------------------------------------------
-★ 保存（一般ユーザー）
+★ 保存（GitHub保存版）
 ----------------------------------------------- */
 async function saveData() {
     const month = document.getElementById('procMonth').value;
@@ -480,24 +480,24 @@ async function saveData() {
         return;
     }
 
+    // GitHubに保存するデータ形式
     const payload = {
-        mode: "save",
-        project:"kintai",
         month,
         team,
         name,
         password,
-        passwordType: "user",   // ← 一般ユーザー
         records: tempRecords,
-        date: new Date().toISOString().slice(0, 10)   // ← ★ここを追加
+        date: new Date().toISOString().slice(0, 10)
     };
-    const res = await fetch(WORKER_URL, {
+
+    const response = await fetch("https://kintai-worker.licsyskaihatu.workers.dev", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
-    alert("保存完了: " + text);
+    const result = await response.text();
+    alert("GitHub保存完了: " + result);
 }
 
 /* -----------------------------------------------
