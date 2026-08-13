@@ -480,7 +480,6 @@ async function saveData() {
         return;
     }
 
-    // GitHubに保存するデータ形式
     const payload = {
         month,
         team,
@@ -517,11 +516,13 @@ async function loadData() {
         name,
         password,
         passwordType: "user",
-        date: new Date().toISOString().slice(0, 10)   // ← ★ここを追加
-    };
+        date: new Date().toISOString().slice(0, 10)    };
 
     const res = await fetch(WORKER_URL, {
         method: "POST",
+    	headers: {
+    	    "Content-Type": "application/json"
+    	},
         body: JSON.stringify(payload)
     });
 
