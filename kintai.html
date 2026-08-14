@@ -516,22 +516,23 @@ async function loadData() {
         name,
         password,
         passwordType: "user",
-        date: new Date().toISOString().slice(0, 10)    };
+        date: new Date().toISOString().slice(0, 10)
+    };
 
     const res = await fetch(WORKER_URL, {
         method: "POST",
-    	headers: {
-    	    "Content-Type": "application/json"
-    	},
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    const result = await res.json();
 
     const tbody = document.getElementById('referenceTableBody');
     tbody.innerHTML = "";
 
-    data.records.forEach(rec => {
+    result.data.forEach(rec => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${rec.date}</td>
