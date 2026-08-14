@@ -527,19 +527,46 @@ async function loadData() {
         body: JSON.stringify(payload)
     });
 
-    const result = await res.json();
+    const rawText = await res.text();
+    let result;
+    try {
+      result = JSON.parse(rawText);
+    } catch (e) {
+      console.error("Invalid JSON from worker:", e, rawText.slice(0, 1000));
+      // ユーザー向けのエラー表示を入れるならここで行う
+      return;
+    }
 
     const tbody = document.getElementById('referenceTableBody');
     tbody.innerHTML = "";
 
-    result.data.forEach(rec => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-            <td>${rec.date}</td>
-            <td>${rec.kubun}</td>
-            <td>${rec.tekiyo}</td>
-        `;
-        tbody.appendChild(tr);
+    // Worker の返却形式に柔軟に対応するために正規化する
+    const rawItems = Array.isArray(result.items) ? result.items
+                   : Array.isArray(result.data) ? result.data
+                   : Array.isArray(result) ? result
+                   : [];
+
+    const files = rawItems.map(fi => {
+      if (!fi) return null;
+      if (fi.parsed) return fi.parsed;               // 恒久版 Worker の場合
+      if (fi.raw_preview) {
+        try { return JSON.parse(fi.raw_preview); }   // raw_preview に JSON が入っている場合
+        catch (e) { return { __raw_preview: fi.raw_preview, __parseError: String(e) }; }
+      }
+      // 既にファイル中身がそのまま入っているケース
+      if (typeof fi === "object" && (fi.month || fi.records || fi.date)) return fi;
+      return null;
+    }).filter(Boolean);
+
+    // テーブルに描画
+    files.forEach(rec => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${rec.date || ""}</td>
+        <td>${rec.kubun || ""}</td>
+        <td>${rec.tekiyo || ""}</td>
+      `;
+      tbody.appendChild(tr);
     });
 }
 
