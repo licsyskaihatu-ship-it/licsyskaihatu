@@ -334,7 +334,7 @@ td {
 /* -----------------------------------------------
 ★ Worker の URL（あなたの環境に合わせて変更）
 ----------------------------------------------- */
-const WORKER_URL = "https://patient-violet-af9d.k-exe-kita.workers.dev";
+const WORKER_URL = "https://kintai-worker.licsyskaihatu.workers.dev";
 
 /* -----------------------------------------------
 ★ 入力画面の一時保存用配列
@@ -489,7 +489,7 @@ async function saveData() {
         date: new Date().toISOString().slice(0, 10)
     };
 
-    const response = await fetch("https://kintai-worker.licsyskaihatu.workers.dev", {
+    const response = await fetch(WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
